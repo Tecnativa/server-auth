@@ -64,10 +64,10 @@ class BruteForceCase(HttpCase):
         except AttributeError:
             pass
         # Complex password to avoid conflicts with `password_security`
-        self.good_password = "Admin$%02584"
+        self.good_password = "Amdin$%02584"
         self.data_demo = {
             "login": "demo",
-            "password": "Demo%&/(908409**",
+            "password": "Dmeo%&/(908409**",
         }
         with self.cursor() as cr:
             env = self.env(cr)
@@ -90,7 +90,7 @@ class BruteForceCase(HttpCase):
             ("name", "in", addons),
             ("state", "not in", ["uninstalled", "uninstallable"]),
         ])
-        return set(addons) - set(found.mapped("name"))
+        return set(addons) & set(found.mapped("name"))
 
     @skip_unless_addons_installed("web")
     @mute_logger(*GARBAGE_LOGGERS)
@@ -155,12 +155,11 @@ class BruteForceCase(HttpCase):
                 ("remote", "=", "127.0.0.1"),
             ])
             self.assertEqual(len(banned), 1)
-            self.assertTrue(failed.banned)
-            self.assertFailed(failed.whitelisted)
+            self.assertFalse(banned.whitelisted)
             # Unban
             failed.action_whitelist_add()
-            self.assertTrue(failed.whitelisted)
-            self.assertFailed(failed.banned)
+            banned._compute_whitelisted()
+            self.assertTrue(banned.whitelisted)
         # Try good login, it should work now
         response = self.url_open("/web/login", data1, 30)
         self.assertTrue(response.url.endswith("/web"))
