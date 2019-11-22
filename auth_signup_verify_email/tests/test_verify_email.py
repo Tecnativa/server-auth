@@ -6,16 +6,14 @@ from lxml.html import document_fromstring
 from odoo.tests.common import HttpCase
 from odoo.addons.mail.models import mail_template
 from odoo.tools.misc import mute_logger
+import odoo
 
 
 class UICase(HttpCase):
     def setUp(self):
         super(UICase, self).setUp()
-        with self.cursor() as cr:
-            env = self.env(cr)
-            icp = env["ir.config_parameter"]
-            icp.set_param("auth_signup.allow_uninvited", "True")
-
+        icp = self.env["ir.config_parameter"]
+        icp.set_param("auth_signup.allow_uninvited", "True")
         self.data = {
             "csrf_token": self.csrf_token(),
             "name": "Somebody",
@@ -29,8 +27,7 @@ class UICase(HttpCase):
 
     def csrf_token(self):
         """Get a valid CSRF token."""
-        doc = self.html_doc()
-        return doc.xpath("//input[@name='csrf_token']")[0].get("value")
+        return odoo.http.HttpRequest.csrf_token(self)
 
     def test_bad_email(self):
         """Test rejection of bad emails."""
@@ -42,5 +39,6 @@ class UICase(HttpCase):
     def test_good_email(self):
         """Test acceptance of good emails."""
         self.data["login"] = "good@example.com"
+        self.data["skip_check_deliverability"] = True
         doc = self.html_doc(data=self.data)
         self.assertTrue(doc.xpath('//p[@class="alert alert-success"]'))

@@ -23,10 +23,12 @@ class SignupVerifyEmail(AuthSignupHome):
     def passwordless_signup(self):
         values = request.params
         qcontext = self.get_auth_signup_qcontext()
-
+        check_deliverability = not qcontext.pop(
+            'skip_check_deliverability', None)
         # Check good format of e-mail
         try:
-            validate_email(values.get("login", ""))
+            validate_email(values.get("login", ""),
+                           check_deliverability=check_deliverability)
         except EmailSyntaxError as error:
             qcontext["error"] = getattr(
                 error,
